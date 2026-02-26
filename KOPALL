@@ -1,0 +1,589 @@
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local cs = game:GetService("CollectionService")
+local StarterGui = game:GetService("StarterGui")
+local lp = Players.LocalPlayer
+
+local petdata = {
+    { rarity = "Infinity", name = "Anububu" },
+    { rarity = "Infinity", name = "Meta Technetta" },
+    { rarity = "Infinity", name = "Magmew" },
+    { rarity = "Infinity", name = "Noobini Infeeny" },
+    { rarity = "Divine", name = "Bulbito Bandito Traktorito" },
+    { rarity = "Divine", name = "Burgerini Bearini" },
+    { rarity = "Divine", name = "Strawberry Elephant" },
+    { rarity = "Divine", name = "Martino Gravitino" },
+    { rarity = "Divine", name = "Galactio Fantasma" },
+    { rarity = "Divine", name = "Grappellino D'Oro" },
+    { rarity = "Divine", name = "Din Din Vaultero" },
+    { rarity = "Divine", name = "Rubichetto Cubini" },
+    { rarity = "Divine", name = "Glacierello Infernetti" },
+    { rarity = "Divine", name = "Freezeti Cobretti" },
+    { rarity = "Divine", name = "Biscotti Macarotti" },
+    { rarity = "Divine", name = "Cupitron Consoletron" },
+    { rarity = "Divine", name = "Explodini Cataclismi" },
+    { rarity = "Divine", name = "Pastapot Infernotto" },
+    { rarity = "Divine", name = "Draculini Meowlini" },
+    { rarity = "Divine", name = "Don Magmito" },
+}
+
+local mutations = {
+    "None", "Emerald", "Gold", "Blood", "Electric", "Admin", "Diamond",
+    "Radioactive", "UFO", "Money", "Candy", "Doom", "Gamer", "Hacker", "Lucky"
+}
+
+local dropdownOptions = {}
+for _, p in ipairs(petdata) do
+    table.insert(dropdownOptions, "[" .. p.rarity .. "] " .. p.name)
+end
+
+local state = {
+    pet = petdata[1].name,
+    rarity = petdata[1].rarity,
+    mutation = "None",
+    level = 100,
+    scale = 1.2,
+}
+
+local function isPrivateServer()
+    return #Players:GetPlayers() <= 1
+end
+
+local function showNotification(title, message)
+    StarterGui:SetCore("SendNotification", {
+        Title = title;
+        Text = message;
+        Duration = 5;
+    })
+end
+
+local function getmybase()
+    local bf = workspace:FindFirstChild("Bases")
+    if not bf then return nil end
+    for _, base in pairs(bf:GetChildren()) do
+        local tp = base:FindFirstChild("Title")
+        if tp then
+            local tg = tp:FindFirstChild("TitleGui")
+            if tg then
+                local fr = tg:FindFirstChild("Frame")
+                if fr then
+                    local pn = fr:FindFirstChild("PlayerName")
+                    if pn and (string.find(pn.Text, lp.Name) or string.find(pn.Text, lp.DisplayName)) then
+                        return base
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function getfirstemptyslot(base)
+    for i = 1, 50 do
+        local s = base:FindFirstChild("slot " .. i .. " brainrot")
+        if s and not s:FindFirstChild("VisualPetContainer") and not s:FindFirstChildWhichIsA("Model") then
+            return s
+        end
+    end
+end
+
+local function spawnpet()
+    local base = getmybase()
+    if not base then warn("base not found!") return end
+    local slot = getfirstemptyslot(base)
+    if not slot then warn("no empty slot!") return end
+
+    local cont = Instance.new("Folder")
+    cont.Name = "VisualPetContainer"
+    cont.Parent = slot
+
+    local root = Instance.new("Part")
+    root.Name = "Root"
+    root.Transparency = 1
+    root.Anchored = true
+    root.CFrame = (slot:IsA("BasePart") and slot.CFrame) or slot.PrimaryPart.CFrame
+    root.Parent = cont
+
+    cont:SetAttribute("BrainrotName", state.pet)
+    cont:SetAttribute("Scale", state.scale)
+    cont:SetAttribute("Level", state.level)
+    cont:SetAttribute("StatsOverhead", true)
+    cont:SetAttribute("Mutation", state.mutation)
+    cs:AddTag(cont, "RenderBrainrot")
+end
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PetSpawnerGUI"
+ScreenGui.IgnoreGuiInset = false
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game.CoreGui or lp:WaitForChild("PlayerGui")
+
+-- MAIN FRAME
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 260, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -180)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.ZIndex = 1
+MainFrame.Visible = true
+MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+local ms = Instance.new("UIStroke", MainFrame)
+ms.Thickness = 2
+ms.Color = Color3.fromRGB(60, 60, 70)
+
+-- TITLE BAR
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 36)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+TitleBar.BorderSizePixel = 0
+TitleBar.Active = true
+TitleBar.ZIndex = 2
+TitleBar.Parent = MainFrame
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 10)
+local ts = Instance.new("UIStroke", TitleBar)
+ts.Thickness = 1
+ts.Color = Color3.fromRGB(70, 70, 80)
+
+local Title = Instance.new("TextLabel")
+Title.Text = "BRAINROT SPAWNER | ∞"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 15
+Title.TextColor3 = Color3.fromRGB(220, 220, 230)
+Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, -80, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 3
+Title.Parent = TitleBar
+
+-- CLOSE BUTTON
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 26, 0, 26)
+CloseButton.Position = UDim2.new(1, -30, 0.5, -13)
+CloseButton.Text = "×"
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 18
+CloseButton.TextColor3 = Color3.fromRGB(220, 220, 230)
+CloseButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+CloseButton.BorderSizePixel = 0
+CloseButton.ZIndex = 3
+CloseButton.Parent = TitleBar
+Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 6)
+
+-- WARN BUTTON
+local WarnButton = Instance.new("TextButton")
+WarnButton.Size = UDim2.new(0, 26, 0, 26)
+WarnButton.Position = UDim2.new(1, -62, 0.5, -13)
+WarnButton.Text = "!"
+WarnButton.Font = Enum.Font.GothamBold
+WarnButton.TextSize = 16
+WarnButton.TextColor3 = Color3.fromRGB(255, 210, 80)
+WarnButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+WarnButton.BorderSizePixel = 0
+WarnButton.ZIndex = 3
+WarnButton.Parent = TitleBar
+Instance.new("UICorner", WarnButton).CornerRadius = UDim.new(0, 6)
+
+-- SPAWN BUTTON (defined early so updatePrivateServer can reference it)
+local SpawnButton = Instance.new("TextButton")
+SpawnButton.Size = UDim2.new(1, -24, 0, 34)
+SpawnButton.Position = UDim2.new(0, 12, 0, 316)
+SpawnButton.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
+SpawnButton.BorderSizePixel = 0
+SpawnButton.Text = "SPAWN BRAINROT"
+SpawnButton.Font = Enum.Font.GothamBold
+SpawnButton.TextSize = 14
+SpawnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpawnButton.ZIndex = 2
+SpawnButton.Parent = MainFrame
+Instance.new("UICorner", SpawnButton).CornerRadius = UDim.new(0, 8)
+
+-- PRIVATE SERVER LOGIC
+local function updatePrivateServer()
+    if isPrivateServer() then
+        WarnButton.TextColor3 = Color3.fromRGB(255, 80, 80)
+        WarnButton.BackgroundColor3 = Color3.fromRGB(60, 35, 35)
+        SpawnButton.BackgroundColor3 = Color3.fromRGB(60, 40, 40)
+        SpawnButton.Text = "PRIVATE SERVER"
+        SpawnButton.Active = false
+    else
+        WarnButton.TextColor3 = Color3.fromRGB(255, 210, 80)
+        WarnButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+        SpawnButton.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
+        SpawnButton.Text = "SPAWN BRAINROT"
+        SpawnButton.Active = true
+    end
+end
+
+WarnButton.MouseButton1Click:Connect(function()
+    if isPrivateServer() then
+        showNotification("PRIVATE SERVER DETECTED", "Private servers are not supported, rejoin and use in public!")
+    else
+        showNotification("REMINDER", "THIS SCRIPT WONT WORK IN PRIVATE SERVERS!")
+    end
+end)
+
+Players.PlayerAdded:Connect(function()
+    task.wait(0.1)
+    updatePrivateServer()
+end)
+Players.PlayerRemoving:Connect(function()
+    task.wait(0.1)
+    updatePrivateServer()
+end)
+
+updatePrivateServer()
+
+local guiVisible = true
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    guiVisible = false
+    CircleToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
+end)
+
+-- DROPDOWN HELPER
+local function buildDropdown(parent, labelText, options, defaultOption, yPos, zBase, onSelect)
+    local section = Instance.new("Frame")
+    section.Size = UDim2.new(1, -24, 0, 60)
+    section.Position = UDim2.new(0, 12, 0, yPos)
+    section.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    section.BorderSizePixel = 0
+    section.ZIndex = zBase
+    section.Parent = parent
+    Instance.new("UICorner", section).CornerRadius = UDim.new(0, 8)
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Text = labelText
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 12
+    lbl.TextColor3 = Color3.fromRGB(200, 200, 210)
+    lbl.BackgroundTransparency = 1
+    lbl.Size = UDim2.new(1, -12, 0, 18)
+    lbl.Position = UDim2.new(0, 8, 0, 4)
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.ZIndex = zBase + 1
+    lbl.Parent = section
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -12, 0, 28)
+    btn.Position = UDim2.new(0, 6, 0, 26)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+    btn.BorderSizePixel = 0
+    btn.Text = defaultOption
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 12
+    btn.TextColor3 = Color3.fromRGB(220, 220, 230)
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.ZIndex = zBase + 2
+    btn.Parent = section
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    local bp = Instance.new("UIPadding", btn)
+    bp.PaddingLeft = UDim.new(0, 8)
+
+    local arrow = Instance.new("TextLabel")
+    arrow.Text = "▼"
+    arrow.Font = Enum.Font.GothamBold
+    arrow.TextSize = 10
+    arrow.TextColor3 = Color3.fromRGB(160, 160, 170)
+    arrow.BackgroundTransparency = 1
+    arrow.Size = UDim2.new(0, 20, 1, 0)
+    arrow.Position = UDim2.new(1, -22, 0, 0)
+    arrow.ZIndex = zBase + 3
+    arrow.Parent = btn
+
+    local list = Instance.new("ScrollingFrame")
+    list.Size = UDim2.new(1, -24, 0, 160)
+    list.Position = UDim2.new(0, 12, 0, yPos + 66)
+    list.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    list.BorderSizePixel = 0
+    list.ScrollBarThickness = 4
+    list.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
+    list.ZIndex = zBase + 10
+    list.Visible = false
+    list.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+    list.Parent = parent
+    Instance.new("UICorner", list).CornerRadius = UDim.new(0, 8)
+    Instance.new("UIListLayout", list).SortOrder = Enum.SortOrder.LayoutOrder
+
+    for i, option in ipairs(options) do
+        local ob = Instance.new("TextButton")
+        ob.Size = UDim2.new(1, 0, 0, 30)
+        ob.BackgroundColor3 = Color3.fromRGB(40, 40, 47)
+        ob.BorderSizePixel = 0
+        ob.Text = option
+        ob.Font = Enum.Font.Gotham
+        ob.TextSize = 12
+        ob.TextColor3 = Color3.fromRGB(210, 210, 220)
+        ob.TextXAlignment = Enum.TextXAlignment.Left
+        ob.LayoutOrder = i
+        ob.ZIndex = zBase + 11
+        ob.Parent = list
+        local p = Instance.new("UIPadding", ob)
+        p.PaddingLeft = UDim.new(0, 10)
+
+        ob.MouseEnter:Connect(function()
+            ob.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+        end)
+        ob.MouseLeave:Connect(function()
+            ob.BackgroundColor3 = Color3.fromRGB(40, 40, 47)
+        end)
+        ob.MouseButton1Click:Connect(function()
+            btn.Text = option
+            list.Visible = false
+            arrow.Text = "▼"
+            onSelect(option, i)
+        end)
+    end
+
+    local open = false
+    btn.MouseButton1Click:Connect(function()
+        open = not open
+        list.Visible = open
+        arrow.Text = open and "▲" or "▼"
+    end)
+
+    return list
+end
+
+-- PET DROPDOWN
+buildDropdown(MainFrame, "Select Pet:", dropdownOptions, dropdownOptions[1], 46, 2, function(option, i)
+    local entry = petdata[i]
+    state.pet = entry.name
+    state.rarity = entry.rarity
+end)
+
+-- MUTATION DROPDOWN
+buildDropdown(MainFrame, "Select Mutation:", mutations, "None", 116, 5, function(option, i)
+    state.mutation = option
+end)
+
+-- LEVEL SLIDER
+local LevelSection = Instance.new("Frame")
+LevelSection.Size = UDim2.new(1, -24, 0, 55)
+LevelSection.Position = UDim2.new(0, 12, 0, 186)
+LevelSection.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+LevelSection.BorderSizePixel = 0
+LevelSection.ZIndex = 2
+LevelSection.Parent = MainFrame
+Instance.new("UICorner", LevelSection).CornerRadius = UDim.new(0, 8)
+
+local LevelLabel = Instance.new("TextLabel")
+LevelLabel.Text = "Level: 100"
+LevelLabel.Font = Enum.Font.Gotham
+LevelLabel.TextSize = 12
+LevelLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+LevelLabel.BackgroundTransparency = 1
+LevelLabel.Size = UDim2.new(1, -12, 0, 18)
+LevelLabel.Position = UDim2.new(0, 8, 0, 4)
+LevelLabel.TextXAlignment = Enum.TextXAlignment.Left
+LevelLabel.ZIndex = 3
+LevelLabel.Parent = LevelSection
+
+local SliderTrack = Instance.new("Frame")
+SliderTrack.Size = UDim2.new(1, -16, 0, 6)
+SliderTrack.Position = UDim2.new(0, 8, 0, 34)
+SliderTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+SliderTrack.BorderSizePixel = 0
+SliderTrack.ZIndex = 3
+SliderTrack.Parent = LevelSection
+Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Size = UDim2.new((100-1)/(250-1), 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+SliderFill.BorderSizePixel = 0
+SliderFill.ZIndex = 4
+SliderFill.Parent = SliderTrack
+Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+
+local SliderKnob = Instance.new("TextButton")
+SliderKnob.Size = UDim2.new(0, 16, 0, 16)
+SliderKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+SliderKnob.Position = UDim2.new((100-1)/(250-1), 0, 0.5, 0)
+SliderKnob.BackgroundColor3 = Color3.fromRGB(200, 220, 255)
+SliderKnob.BorderSizePixel = 0
+SliderKnob.Text = ""
+SliderKnob.ZIndex = 5
+SliderKnob.Parent = SliderTrack
+Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
+
+local sliderDragging = false
+SliderKnob.MouseButton1Down:Connect(function() sliderDragging = true end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        sliderDragging = false
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local trackPos = SliderTrack.AbsolutePosition.X
+        local trackSize = SliderTrack.AbsoluteSize.X
+        local relative = math.clamp((input.Position.X - trackPos) / trackSize, 0, 1)
+        local level = math.floor(relative * (250 - 1) + 1)
+        state.level = level
+        LevelLabel.Text = "Level: " .. level
+        SliderFill.Size = UDim2.new(relative, 0, 1, 0)
+        SliderKnob.Position = UDim2.new(relative, 0, 0.5, 0)
+    end
+end)
+
+-- SCALE SLIDER
+local ScaleSection = Instance.new("Frame")
+ScaleSection.Size = UDim2.new(1, -24, 0, 55)
+ScaleSection.Position = UDim2.new(0, 12, 0, 251)
+ScaleSection.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+ScaleSection.BorderSizePixel = 0
+ScaleSection.ZIndex = 2
+ScaleSection.Parent = MainFrame
+Instance.new("UICorner", ScaleSection).CornerRadius = UDim.new(0, 8)
+
+local ScaleLabel = Instance.new("TextLabel")
+ScaleLabel.Text = "Scale: 1.2x"
+ScaleLabel.Font = Enum.Font.Gotham
+ScaleLabel.TextSize = 12
+ScaleLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+ScaleLabel.BackgroundTransparency = 1
+ScaleLabel.Size = UDim2.new(1, -12, 0, 18)
+ScaleLabel.Position = UDim2.new(0, 8, 0, 4)
+ScaleLabel.TextXAlignment = Enum.TextXAlignment.Left
+ScaleLabel.ZIndex = 3
+ScaleLabel.Parent = ScaleSection
+
+local ScaleTrack = Instance.new("Frame")
+ScaleTrack.Size = UDim2.new(1, -16, 0, 6)
+ScaleTrack.Position = UDim2.new(0, 8, 0, 34)
+ScaleTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+ScaleTrack.BorderSizePixel = 0
+ScaleTrack.ZIndex = 3
+ScaleTrack.Parent = ScaleSection
+Instance.new("UICorner", ScaleTrack).CornerRadius = UDim.new(1, 0)
+
+local ScaleFill = Instance.new("Frame")
+ScaleFill.Size = UDim2.new((1.2-0.1)/(5-0.1), 0, 1, 0)
+ScaleFill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+ScaleFill.BorderSizePixel = 0
+ScaleFill.ZIndex = 4
+ScaleFill.Parent = ScaleTrack
+Instance.new("UICorner", ScaleFill).CornerRadius = UDim.new(1, 0)
+
+local ScaleKnob = Instance.new("TextButton")
+ScaleKnob.Size = UDim2.new(0, 16, 0, 16)
+ScaleKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+ScaleKnob.Position = UDim2.new((1.2-0.1)/(5-0.1), 0, 0.5, 0)
+ScaleKnob.BackgroundColor3 = Color3.fromRGB(200, 220, 255)
+ScaleKnob.BorderSizePixel = 0
+ScaleKnob.Text = ""
+ScaleKnob.ZIndex = 5
+ScaleKnob.Parent = ScaleTrack
+Instance.new("UICorner", ScaleKnob).CornerRadius = UDim.new(1, 0)
+
+local scaleDragging = false
+ScaleKnob.MouseButton1Down:Connect(function() scaleDragging = true end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        scaleDragging = false
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if scaleDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local trackPos = ScaleTrack.AbsolutePosition.X
+        local trackSize = ScaleTrack.AbsoluteSize.X
+        local relative = math.clamp((input.Position.X - trackPos) / trackSize, 0, 1)
+        local scale = math.floor((relative * (5 - 0.1) + 0.1) * 10 + 0.5) / 10
+        state.scale = scale
+        ScaleLabel.Text = "Scale: " .. string.format("%.1f", scale) .. "x"
+        ScaleFill.Size = UDim2.new(relative, 0, 1, 0)
+        ScaleKnob.Position = UDim2.new(relative, 0, 0.5, 0)
+    end
+end)
+
+-- SPAWN BUTTON LOGIC
+SpawnButton.MouseEnter:Connect(function()
+    if not isPrivateServer() then
+        TweenService:Create(SpawnButton, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(90, 150, 220) }):Play()
+    end
+end)
+SpawnButton.MouseLeave:Connect(function()
+    if not isPrivateServer() then
+        TweenService:Create(SpawnButton, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(70, 130, 200) }):Play()
+    end
+end)
+SpawnButton.MouseButton1Click:Connect(function()
+    if isPrivateServer() then
+        showNotification("PRIVATE SERVER DETECTED", "Private servers are not supported, rejoin and use in public!")
+        return
+    end
+    spawnpet()
+    TweenService:Create(SpawnButton, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(60, 200, 100) }):Play()
+    task.wait(0.4)
+    TweenService:Create(SpawnButton, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(70, 130, 200) }):Play()
+end)
+
+-- DRAG SYSTEM
+local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- FLOATING TOGGLE CIRCLE
+local CircleToggle = Instance.new("TextButton")
+CircleToggle.Size = UDim2.new(0, 50, 0, 50)
+CircleToggle.Position = UDim2.new(0, 20, 0.5, -25)
+CircleToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+CircleToggle.BorderSizePixel = 0
+CircleToggle.Text = ""
+CircleToggle.ZIndex = 100
+CircleToggle.Parent = ScreenGui
+Instance.new("UICorner", CircleToggle).CornerRadius = UDim.new(1, 0)
+
+CircleToggle.MouseButton1Click:Connect(function()
+    guiVisible = not guiVisible
+    MainFrame.Visible = guiVisible
+    CircleToggle.BackgroundColor3 = guiVisible and Color3.fromRGB(60, 60, 70) or Color3.fromRGB(80, 80, 90)
+end)
+
+local circleDragging, circleInput, circleStart, circlePos = false, nil, nil, nil
+CircleToggle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        circleDragging = true
+        circleStart = input.Position
+        circlePos = CircleToggle.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then circleDragging = false end
+        end)
+    end
+end)
+CircleToggle.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        circleInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if circleDragging and input == circleInput then
+        local delta = input.Position - circleStart
+        CircleToggle.Position = UDim2.new(circlePos.X.Scale, circlePos.X.Offset + delta.X, circlePos.Y.Scale, circlePos.Y.Offset + delta.Y)
+    end
+end)
+
+MainFrame.Visible = true
