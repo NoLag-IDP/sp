@@ -1,0 +1,499 @@
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local cs = game:GetService("CollectionService")
+local lp = Players.LocalPlayer
+
+local petdata = {
+    { rarity = "Infinity", name = "Anububu" },
+    { rarity = "Infinity", name = "Meta Technetta" },
+    { rarity = "Infinity", name = "Magmew" },
+    { rarity = "Infinity", name = "Noobini Infeeny" },
+    { rarity = "Divine", name = "Bulbito Bandito Traktorito" },
+    { rarity = "Divine", name = "Burgerini Bearini" },
+    { rarity = "Divine", name = "Strawberry Elephant" },
+    { rarity = "Divine", name = "Martino Gravitino" },
+    { rarity = "Divine", name = "Galactio Fantasma" },
+    { rarity = "Divine", name = "Grappellino D'Oro" },
+    { rarity = "Divine", name = "Din Din Vaultero" },
+    { rarity = "Divine", name = "Rubichetto Cubini" },
+    { rarity = "Divine", name = "Glacierello Infernetti" },
+    { rarity = "Divine", name = "Freezeti Cobretti" },
+    { rarity = "Divine", name = "Biscotti Macarotti" },
+    { rarity = "Divine", name = "Cupitron Consoletron" },
+    { rarity = "Divine", name = "Explodini Cataclismi" },
+    { rarity = "Divine", name = "Pastapot Infernotto" },
+    { rarity = "Divine", name = "Draculini Meowlini" },
+    { rarity = "Divine", name = "Don Magmito" },
+}
+
+local dropdownOptions = {}
+for _, p in ipairs(petdata) do
+    table.insert(dropdownOptions, "[" .. p.rarity .. "] " .. p.name)
+end
+
+local state = {
+    pet = petdata[1].name,
+    rarity = petdata[1].rarity,
+    level = 100,
+    scale = 1.2,
+}
+
+-- BASE/SLOT LOGIC
+local function getmybase()
+    local bf = workspace:FindFirstChild("Bases")
+    if not bf then return nil end
+    for _, base in pairs(bf:GetChildren()) do
+        local tp = base:FindFirstChild("Title")
+        if tp then
+            local tg = tp:FindFirstChild("TitleGui")
+            if tg then
+                local fr = tg:FindFirstChild("Frame")
+                if fr then
+                    local pn = fr:FindFirstChild("PlayerName")
+                    if pn and (string.find(pn.Text, lp.Name) or string.find(pn.Text, lp.DisplayName)) then
+                        return base
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function getfirstemptyslot(base)
+    for i = 1, 50 do
+        local s = base:FindFirstChild("slot " .. i .. " brainrot")
+        if s and not s:FindFirstChild("VisualPetContainer") and not s:FindFirstChildWhichIsA("Model") then
+            return s
+        end
+    end
+end
+
+local function spawnpet()
+    local base = getmybase()
+    if not base then warn("base not found!") return end
+    local slot = getfirstemptyslot(base)
+    if not slot then warn("no empty slot!") return end
+
+    local cont = Instance.new("Folder")
+    cont.Name = "VisualPetContainer"
+    cont.Parent = slot
+
+    local root = Instance.new("Part")
+    root.Name = "Root"
+    root.Transparency = 1
+    root.Anchored = true
+    root.CFrame = (slot:IsA("BasePart") and slot.CFrame) or slot.PrimaryPart.CFrame
+    root.Parent = cont
+
+    cont:SetAttribute("BrainrotName", state.pet)
+    cont:SetAttribute("Scale", state.scale)
+    cont:SetAttribute("Level", state.level)
+    cont:SetAttribute("StatsOverhead", true)
+    cont:SetAttribute("Mutation", "None")
+    cs:AddTag(cont, "RenderBrainrot")
+end
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PetSpawnerGUI"
+ScreenGui.IgnoreGuiInset = false
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game.CoreGui or lp:WaitForChild("PlayerGui")
+
+-- MAIN FRAME
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 260, 0, 290)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -145)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.ZIndex = 1
+MainFrame.Parent = ScreenGui
+
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+local ms = Instance.new("UIStroke", MainFrame)
+ms.Thickness = 2
+ms.Color = Color3.fromRGB(60, 60, 70)
+
+-- TITLE BAR
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 36)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+TitleBar.BorderSizePixel = 0
+TitleBar.Active = true
+TitleBar.ZIndex = 2
+TitleBar.Parent = MainFrame
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 10)
+local ts = Instance.new("UIStroke", TitleBar)
+ts.Thickness = 1
+ts.Color = Color3.fromRGB(70, 70, 80)
+
+local Title = Instance.new("TextLabel")
+Title.Text = "PET SPAWNER"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 15
+Title.TextColor3 = Color3.fromRGB(220, 220, 230)
+Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 3
+Title.Parent = TitleBar
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 26, 0, 26)
+CloseButton.Position = UDim2.new(1, -30, 0.5, -13)
+CloseButton.Text = "×"
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 18
+CloseButton.TextColor3 = Color3.fromRGB(220, 220, 230)
+CloseButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+CloseButton.BorderSizePixel = 0
+CloseButton.ZIndex = 3
+CloseButton.Parent = TitleBar
+Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0, 6)
+
+local guiVisible = true
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    guiVisible = false
+    CircleToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
+end)
+
+-- DROPDOWN SECTION
+local DropSection = Instance.new("Frame")
+DropSection.Size = UDim2.new(1, -24, 0, 60)
+DropSection.Position = UDim2.new(0, 12, 0, 46)
+DropSection.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+DropSection.BorderSizePixel = 0
+DropSection.ZIndex = 2
+DropSection.Parent = MainFrame
+Instance.new("UICorner", DropSection).CornerRadius = UDim.new(0, 8)
+
+local DropLabel = Instance.new("TextLabel")
+DropLabel.Text = "Select Pet:"
+DropLabel.Font = Enum.Font.Gotham
+DropLabel.TextSize = 12
+DropLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+DropLabel.BackgroundTransparency = 1
+DropLabel.Size = UDim2.new(1, -12, 0, 18)
+DropLabel.Position = UDim2.new(0, 8, 0, 4)
+DropLabel.TextXAlignment = Enum.TextXAlignment.Left
+DropLabel.ZIndex = 3
+DropLabel.Parent = DropSection
+
+local DropButton = Instance.new("TextButton")
+DropButton.Size = UDim2.new(1, -12, 0, 28)
+DropButton.Position = UDim2.new(0, 6, 0, 26)
+DropButton.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+DropButton.BorderSizePixel = 0
+DropButton.Text = dropdownOptions[1]
+DropButton.Font = Enum.Font.Gotham
+DropButton.TextSize = 12
+DropButton.TextColor3 = Color3.fromRGB(220, 220, 230)
+DropButton.TextXAlignment = Enum.TextXAlignment.Left
+DropButton.ZIndex = 4
+DropButton.Parent = DropSection
+Instance.new("UICorner", DropButton).CornerRadius = UDim.new(0, 6)
+local dbp = Instance.new("UIPadding", DropButton)
+dbp.PaddingLeft = UDim.new(0, 8)
+
+local DropArrow = Instance.new("TextLabel")
+DropArrow.Text = "▼"
+DropArrow.Font = Enum.Font.GothamBold
+DropArrow.TextSize = 10
+DropArrow.TextColor3 = Color3.fromRGB(160, 160, 170)
+DropArrow.BackgroundTransparency = 1
+DropArrow.Size = UDim2.new(0, 20, 1, 0)
+DropArrow.Position = UDim2.new(1, -22, 0, 0)
+DropArrow.ZIndex = 5
+DropArrow.Parent = DropButton
+
+-- DROPDOWN LIST
+local DropList = Instance.new("ScrollingFrame")
+DropList.Size = UDim2.new(1, -24, 0, 160)
+DropList.Position = UDim2.new(0, 12, 0, 112)
+DropList.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+DropList.BorderSizePixel = 0
+DropList.ScrollBarThickness = 4
+DropList.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
+DropList.ZIndex = 10
+DropList.Visible = false
+DropList.CanvasSize = UDim2.new(0, 0, 0, #dropdownOptions * 30)
+DropList.Parent = MainFrame
+Instance.new("UICorner", DropList).CornerRadius = UDim.new(0, 8)
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = DropList
+
+for i, option in ipairs(dropdownOptions) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 47)
+    btn.BorderSizePixel = 0
+    btn.Text = option
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 12
+    btn.TextColor3 = Color3.fromRGB(210, 210, 220)
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.LayoutOrder = i
+    btn.ZIndex = 11
+    btn.Parent = DropList
+    local bp = Instance.new("UIPadding", btn)
+    bp.PaddingLeft = UDim.new(0, 10)
+
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 47)
+    end)
+    btn.MouseButton1Click:Connect(function()
+        DropButton.Text = option
+        DropList.Visible = false
+        DropArrow.Text = "▼"
+        local entry = petdata[i]
+        state.pet = entry.name
+        state.rarity = entry.rarity
+    end)
+end
+
+local dropOpen = false
+DropButton.MouseButton1Click:Connect(function()
+    dropOpen = not dropOpen
+    DropList.Visible = dropOpen
+    DropArrow.Text = dropOpen and "▲" or "▼"
+end)
+
+-- LEVEL SLIDER SECTION
+local LevelSection = Instance.new("Frame")
+LevelSection.Size = UDim2.new(1, -24, 0, 55)
+LevelSection.Position = UDim2.new(0, 12, 0, 116)
+LevelSection.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+LevelSection.BorderSizePixel = 0
+LevelSection.ZIndex = 2
+LevelSection.Parent = MainFrame
+Instance.new("UICorner", LevelSection).CornerRadius = UDim.new(0, 8)
+
+local LevelLabel = Instance.new("TextLabel")
+LevelLabel.Text = "Level: 100"
+LevelLabel.Font = Enum.Font.Gotham
+LevelLabel.TextSize = 12
+LevelLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+LevelLabel.BackgroundTransparency = 1
+LevelLabel.Size = UDim2.new(1, -12, 0, 18)
+LevelLabel.Position = UDim2.new(0, 8, 0, 4)
+LevelLabel.TextXAlignment = Enum.TextXAlignment.Left
+LevelLabel.ZIndex = 3
+LevelLabel.Parent = LevelSection
+
+local SliderTrack = Instance.new("Frame")
+SliderTrack.Size = UDim2.new(1, -16, 0, 6)
+SliderTrack.Position = UDim2.new(0, 8, 0, 34)
+SliderTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+SliderTrack.BorderSizePixel = 0
+SliderTrack.ZIndex = 3
+SliderTrack.Parent = LevelSection
+Instance.new("UICorner", SliderTrack).CornerRadius = UDim.new(1, 0)
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Size = UDim2.new((100-1)/(250-1), 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+SliderFill.BorderSizePixel = 0
+SliderFill.ZIndex = 4
+SliderFill.Parent = SliderTrack
+Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+
+local SliderKnob = Instance.new("TextButton")
+SliderKnob.Size = UDim2.new(0, 16, 0, 16)
+SliderKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+SliderKnob.Position = UDim2.new((100-1)/(250-1), 0, 0.5, 0)
+SliderKnob.BackgroundColor3 = Color3.fromRGB(200, 220, 255)
+SliderKnob.BorderSizePixel = 0
+SliderKnob.Text = ""
+SliderKnob.ZIndex = 5
+SliderKnob.Parent = SliderTrack
+Instance.new("UICorner", SliderKnob).CornerRadius = UDim.new(1, 0)
+
+local sliderDragging = false
+SliderKnob.MouseButton1Down:Connect(function() sliderDragging = true end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        sliderDragging = false
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local trackPos = SliderTrack.AbsolutePosition.X
+        local trackSize = SliderTrack.AbsoluteSize.X
+        local relative = math.clamp((input.Position.X - trackPos) / trackSize, 0, 1)
+        local level = math.floor(relative * (250 - 1) + 1)
+        state.level = level
+        LevelLabel.Text = "Level: " .. level
+        SliderFill.Size = UDim2.new(relative, 0, 1, 0)
+        SliderKnob.Position = UDim2.new(relative, 0, 0.5, 0)
+    end
+end)
+
+-- SCALE SLIDER SECTION
+local ScaleSection = Instance.new("Frame")
+ScaleSection.Size = UDim2.new(1, -24, 0, 55)
+ScaleSection.Position = UDim2.new(0, 12, 0, 181)
+ScaleSection.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+ScaleSection.BorderSizePixel = 0
+ScaleSection.ZIndex = 2
+ScaleSection.Parent = MainFrame
+Instance.new("UICorner", ScaleSection).CornerRadius = UDim.new(0, 8)
+
+local ScaleLabel = Instance.new("TextLabel")
+ScaleLabel.Text = "Scale: 1.2x"
+ScaleLabel.Font = Enum.Font.Gotham
+ScaleLabel.TextSize = 12
+ScaleLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+ScaleLabel.BackgroundTransparency = 1
+ScaleLabel.Size = UDim2.new(1, -12, 0, 18)
+ScaleLabel.Position = UDim2.new(0, 8, 0, 4)
+ScaleLabel.TextXAlignment = Enum.TextXAlignment.Left
+ScaleLabel.ZIndex = 3
+ScaleLabel.Parent = ScaleSection
+
+local ScaleTrack = Instance.new("Frame")
+ScaleTrack.Size = UDim2.new(1, -16, 0, 6)
+ScaleTrack.Position = UDim2.new(0, 8, 0, 34)
+ScaleTrack.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+ScaleTrack.BorderSizePixel = 0
+ScaleTrack.ZIndex = 3
+ScaleTrack.Parent = ScaleSection
+Instance.new("UICorner", ScaleTrack).CornerRadius = UDim.new(1, 0)
+
+local ScaleFill = Instance.new("Frame")
+ScaleFill.Size = UDim2.new((1.2-0.1)/(5-0.1), 0, 1, 0)
+ScaleFill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+ScaleFill.BorderSizePixel = 0
+ScaleFill.ZIndex = 4
+ScaleFill.Parent = ScaleTrack
+Instance.new("UICorner", ScaleFill).CornerRadius = UDim.new(1, 0)
+
+local ScaleKnob = Instance.new("TextButton")
+ScaleKnob.Size = UDim2.new(0, 16, 0, 16)
+ScaleKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+ScaleKnob.Position = UDim2.new((1.2-0.1)/(5-0.1), 0, 0.5, 0)
+ScaleKnob.BackgroundColor3 = Color3.fromRGB(200, 220, 255)
+ScaleKnob.BorderSizePixel = 0
+ScaleKnob.Text = ""
+ScaleKnob.ZIndex = 5
+ScaleKnob.Parent = ScaleTrack
+Instance.new("UICorner", ScaleKnob).CornerRadius = UDim.new(1, 0)
+
+local scaleDragging = false
+ScaleKnob.MouseButton1Down:Connect(function() scaleDragging = true end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        scaleDragging = false
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if scaleDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local trackPos = ScaleTrack.AbsolutePosition.X
+        local trackSize = ScaleTrack.AbsoluteSize.X
+        local relative = math.clamp((input.Position.X - trackPos) / trackSize, 0, 1)
+        local scale = math.floor((relative * (5 - 0.1) + 0.1) * 10 + 0.5) / 10
+        state.scale = scale
+        ScaleLabel.Text = "Scale: " .. string.format("%.1f", scale) .. "x"
+        ScaleFill.Size = UDim2.new(relative, 0, 1, 0)
+        ScaleKnob.Position = UDim2.new(relative, 0, 0.5, 0)
+    end
+end)
+
+-- SPAWN BUTTON
+local SpawnButton = Instance.new("TextButton")
+SpawnButton.Size = UDim2.new(1, -24, 0, 34)
+SpawnButton.Position = UDim2.new(0, 12, 0, 246)
+SpawnButton.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
+SpawnButton.BorderSizePixel = 0
+SpawnButton.Text = "SPAWN PET"
+SpawnButton.Font = Enum.Font.GothamBold
+SpawnButton.TextSize = 14
+SpawnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpawnButton.ZIndex = 2
+SpawnButton.Parent = MainFrame
+Instance.new("UICorner", SpawnButton).CornerRadius = UDim.new(0, 8)
+
+SpawnButton.MouseEnter:Connect(function()
+    TweenService:Create(SpawnButton, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(90, 150, 220) }):Play()
+end)
+SpawnButton.MouseLeave:Connect(function()
+    TweenService:Create(SpawnButton, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(70, 130, 200) }):Play()
+end)
+SpawnButton.MouseButton1Click:Connect(function()
+    spawnpet()
+    TweenService:Create(SpawnButton, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(60, 200, 100) }):Play()
+    task.wait(0.4)
+    TweenService:Create(SpawnButton, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(70, 130, 200) }):Play()
+end)
+
+-- DRAG SYSTEM
+local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- FLOATING TOGGLE CIRCLE
+local CircleToggle = Instance.new("TextButton")
+CircleToggle.Size = UDim2.new(0, 50, 0, 50)
+CircleToggle.Position = UDim2.new(0, 20, 0.5, -25)
+CircleToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+CircleToggle.BorderSizePixel = 0
+CircleToggle.Text = ""
+CircleToggle.ZIndex = 100
+CircleToggle.Parent = ScreenGui
+Instance.new("UICorner", CircleToggle).CornerRadius = UDim.new(1, 0)
+
+CircleToggle.MouseButton1Click:Connect(function()
+    guiVisible = not guiVisible
+    MainFrame.Visible = guiVisible
+    CircleToggle.BackgroundColor3 = guiVisible and Color3.fromRGB(60, 60, 70) or Color3.fromRGB(80, 80, 90)
+end)
+
+local circleDragging, circleInput, circleStart, circlePos = false, nil, nil, nil
+CircleToggle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        circleDragging = true
+        circleStart = input.Position
+        circlePos = CircleToggle.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then circleDragging = false end
+        end)
+    end
+end)
+CircleToggle.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        circleInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if circleDragging and input == circleInput then
+        local delta = input.Position - circleStart
+        CircleToggle.Position = UDim2.new(circlePos.X.Scale, circlePos.X.Offset + delta.X, circlePos.Y.Scale, circlePos.Y.Offset + delta.Y)
+    end
+end)
